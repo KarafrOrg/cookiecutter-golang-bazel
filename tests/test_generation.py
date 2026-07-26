@@ -129,7 +129,7 @@ def test_repo_command_bash_array_syntax_preserved(cookies):
     """${#args[@]} must not be mangled by Jinja2 raw-block handling."""
     result = cookies.bake(extra_context=BASE_CONTEXT)
     content = (
-            result.project_path / "bazel" / "shell" / "repo_command.sh.in"
+        result.project_path / "bazel" / "shell" / "repo_command.sh.in"
     ).read_text()
     assert "${#args[@]}" in content
     assert "{% raw %}" not in content
