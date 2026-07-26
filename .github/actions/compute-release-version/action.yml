@@ -1,0 +1,65 @@
+name: Compute release version
+description: Compute tag and release branch based on current branch and existing tags
+
+outputs:
+  tag:
+    description: Release tag to create (v<major>.<minor>.<patch>)
+    value: ${{ steps.compute.outputs.tag }}
+  release_branch:
+    description: Release branch to create for non-release-branch runs
+    value: ${{ steps.compute.outputs.release_branch }}
+  is_release_branch:
+    description: Whether the workflow is running on release/<major>.<minor>.x
+    value: ${{ steps.compute.outputs.is_release_branch }}
+
+runs:
+  using: composite
+  steps:
+    - id: compute
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        parse_semver_tag() {
+          local tag="$1"
+          if [[ ! "${tag}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Unsupported tag format: ${tag}" >&2
+            exit 1
+          fi
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+        }
+
+        branch_name="${GITHUB_REF_NAME}"
+        is_release_branch="false"
+        release_branch=""
+
+        if [[ "${branch_name}" =~ ^release/([0-9]+)\.([0-9]+)\.x$ ]]; then
+          is_release_branch="true"
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="0"
+
+          latest_in_line="$(git tag -l "v${major}.${minor}.[0-9]*" --sort=-v:refname | head -n 1)"
+          if [[ -n "${latest_in_line}" ]]; then
+            parse_semver_tag "${latest_in_line}"
+            patch="$((patch + 1))"
+          fi
+        else
+          latest_tag="$(git tag -l "v[0-9]*.[0-9]*.[0-9]*" --sort=-v:refname | head -n 1)"
+          if [[ -z "${latest_tag}" ]]; then
+            major="0"
+            minor="1"
+          else
+            parse_semver_tag "${latest_tag}"
+            minor="$((minor + 1))"
+          fi
+          patch="0"
+          release_branch="release/${major}.${minor}.x"
+        fi
+
+        echo "tag=v${major}.${minor}.${patch}" >> "${GITHUB_OUTPUT}"
+        echo "release_branch=${release_branch}" >> "${GITHUB_OUTPUT}"
+        echo "is_release_branch=${is_release_branch}" >> "${GITHUB_OUTPUT}"
+

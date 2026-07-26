@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Create release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute release version
+        id: version
+        uses: ./.github/actions/compute-release-version
+
+      - name: Create release branch
+        if: steps.version.outputs.is_release_branch != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          release_branch="${{ steps.version.outputs.release_branch }}"
+          if git ls-remote --exit-code --heads origin "${release_branch}" > /dev/null 2>&1; then
+            echo "Branch ${release_branch} already exists, skipping creation."
+          else
+            git push origin "HEAD:refs/heads/${release_branch}"
+            echo "Created branch ${release_branch}."
+          fi
+
+      - name: Create and push tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ steps.version.outputs.tag }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" > /dev/null 2>&1; then
+            echo "Tag ${tag} already exists, skipping tag creation."
+            exit 0
+          fi
+
+          git tag "${tag}"
+          git push origin "refs/tags/${tag}"
+          echo "Created tag ${tag}."
+
+      - name: Build release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ steps.version.outputs.tag }}"
+          repo_name="${GITHUB_REPOSITORY#*/}"
+          out_dir="dist"
+
+          mkdir -p "${out_dir}"
+          git archive --format=tar.gz --output="${out_dir}/${repo_name}-${tag}.tar.gz" "${tag}"
+          git archive --format=zip --output="${out_dir}/${repo_name}-${tag}.zip" "${tag}"
+          sha256sum "${out_dir}/${repo_name}-${tag}.tar.gz" "${out_dir}/${repo_name}-${tag}.zip" > "${out_dir}/checksums.txt"
+
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ steps.version.outputs.tag }}"
+          assets=(dist/*)
+          if gh release view "${tag}" > /dev/null 2>&1; then
+            gh release upload "${tag}" "${assets[@]}" --clobber
+          else
+            gh release create "${tag}" "${assets[@]}" --title "${tag}" --generate-notes
+          fi
