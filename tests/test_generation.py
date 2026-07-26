@@ -92,29 +92,32 @@ def test_gitignore_present_when_use_git_y(cookies):
     assert (result.project_path / ".gitignore").exists()
 
 
-@pytest.mark.parametrize("filepath", [
-    "go.mod",
-    "go.work",
-    "MODULE.bazel",
-    "BUILD.bazel",
-    ".bazelrc",
-    ".bazelversion",
-    ".golangci.yml",
-    ".shellcheckrc",
-    ".editorconfig",
-    ".gitattributes",
-    "scripts/BUILD.bazel",
-    "scripts/govulncheck.sh.in",
-    "scripts/go_generate.sh.in",
-    "scripts/go_tidy.sh.in",
-    "scripts/buildifier_check.sh.in",
-    "scripts/unused_gh_actions.sh.in",
-    "bazel/shell/lib.bash",
-    "bazel/shell/repo_command.sh.in",
-    "bazel/shell/def.bzl",
-    "bazel/version.bzl",
-    "bazel/platforms.bzl",
-])
+@pytest.mark.parametrize(
+    "filepath",
+    [
+        "go.mod",
+        "go.work",
+        "MODULE.bazel",
+        "BUILD.bazel",
+        ".bazelrc",
+        ".bazelversion",
+        ".golangci.yml",
+        ".shellcheckrc",
+        ".editorconfig",
+        ".gitattributes",
+        "scripts/BUILD.bazel",
+        "scripts/govulncheck.sh.in",
+        "scripts/go_generate.sh.in",
+        "scripts/go_tidy.sh.in",
+        "scripts/buildifier_check.sh.in",
+        "scripts/unused_gh_actions.sh.in",
+        "bazel/shell/lib.bash",
+        "bazel/shell/repo_command.sh.in",
+        "bazel/shell/def.bzl",
+        "bazel/version.bzl",
+        "bazel/platforms.bzl",
+    ],
+)
 def test_required_file_present(cookies, filepath):
     result = cookies.bake(extra_context=BASE_CONTEXT)
     assert (result.project_path / filepath).exists(), f"Missing: {filepath}"
