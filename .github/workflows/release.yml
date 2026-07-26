@@ -26,6 +26,7 @@ jobs:
       - name: Create release branch
         if: steps.version.outputs.is_release_branch != 'true'
         shell: bash
+        # language=bash
         run: |
           set -euo pipefail
 
@@ -39,6 +40,7 @@ jobs:
 
       - name: Create and push tag
         shell: bash
+        # language=bash
         run: |
           set -euo pipefail
 
@@ -54,6 +56,7 @@ jobs:
 
       - name: Build release artifacts
         shell: bash
+        # language=bash
         run: |
           set -euo pipefail
 
@@ -75,6 +78,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
+        # language=bash
         run: |
           set -euo pipefail
 

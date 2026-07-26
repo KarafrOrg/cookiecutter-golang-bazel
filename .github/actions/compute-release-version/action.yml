@@ -17,6 +17,7 @@ runs:
   steps:
     - id: compute
       shell: bash
+      # language=bash
       run: |
         set -euo pipefail
 
