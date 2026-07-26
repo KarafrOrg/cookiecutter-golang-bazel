@@ -30,7 +30,13 @@ def init_git() -> None:
     commands = [
         ["git", "init"],
         ["git", "add", "."],
-        ["git", "commit", "-a", "-m", "Initial Commit."],
+        [
+            "git",
+            "remote",
+            "add",
+            "origin",
+            "git@{{ cookiecutter.github_host }}:{{ cookiecutter.owner }}/{{ cookiecutter.app_name }}.git",
+        ],
     ]
 
     for command in commands:
