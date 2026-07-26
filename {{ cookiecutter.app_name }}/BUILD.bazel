@@ -1,0 +1,70 @@
+load("@gazelle//:def.bzl", "gazelle")
+load("@rules_go//go:def.bzl", "nogo")
+
+gazelle(name = "gazelle")
+
+alias(
+    name = "gazelle-update",
+    actual = "//scripts:gazelle_generate",
+)
+
+alias(
+    name = "gazelle-generate",
+    actual = "//scripts:gazelle_generate",
+)
+
+alias(
+    name = "gazelle-check",
+    actual = "//scripts:gazelle_check",
+)
+
+alias(
+    name = "check",
+    actual = "//scripts:check",
+)
+
+alias(
+    name = "tidy",
+    actual = "//scripts:tidy",
+)
+
+alias(
+    name = "generate",
+    actual = "//scripts:generate",
+)
+
+filegroup(
+    name = "release",
+    srcs = [
+        "//cmd/{{ cookiecutter.app_name }}:all_platforms",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+nogo(
+    name = "{{ cookiecutter.app_name }}_nogo",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_golang_x_tools//go/analysis/passes/asmdecl",
+        "@org_golang_x_tools//go/analysis/passes/assign",
+        "@org_golang_x_tools//go/analysis/passes/atomic",
+        "@org_golang_x_tools//go/analysis/passes/bools",
+        "@org_golang_x_tools//go/analysis/passes/buildtag",
+        "@org_golang_x_tools//go/analysis/passes/cgocall",
+        "@org_golang_x_tools//go/analysis/passes/composite",
+        "@org_golang_x_tools//go/analysis/passes/copylock",
+        "@org_golang_x_tools//go/analysis/passes/httpresponse",
+        "@org_golang_x_tools//go/analysis/passes/lostcancel",
+        "@org_golang_x_tools//go/analysis/passes/nilfunc",
+        "@org_golang_x_tools//go/analysis/passes/printf",
+        "@org_golang_x_tools//go/analysis/passes/shift",
+        "@org_golang_x_tools//go/analysis/passes/stdmethods",
+        "@org_golang_x_tools//go/analysis/passes/stringintconv",
+        "@org_golang_x_tools//go/analysis/passes/structtag",
+        "@org_golang_x_tools//go/analysis/passes/tests",
+        "@org_golang_x_tools//go/analysis/passes/unmarshal",
+        "@org_golang_x_tools//go/analysis/passes/unreachable",
+        "@org_golang_x_tools//go/analysis/passes/unsafeptr",
+        "@org_golang_x_tools//go/analysis/passes/unusedresult",
+    ],
+)

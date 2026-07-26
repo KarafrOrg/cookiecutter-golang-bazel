@@ -1,0 +1,23 @@
+# Use `bazel test --config=fuzz //...` to run only fuzz-tagged Go fuzz tests
+# with long-lived, uncached, streamed output and a persistent local cache dir.
+
+# Stream output during fuzzing
+test:fuzz --test_output=streamed
+
+# Only run fuzz tests
+test:fuzz --test_tag_filters=+fuzz
+
+# Fuzzing is interactive and stateful, so avoid cached results and parallel
+# execution with other tests.
+test:fuzz --test_strategy=exclusive
+test:fuzz --nocache_test_results
+
+# Let fuzz targets run long enough to be useful by default.
+test:fuzz --test_timeout=9999
+
+# Run the fuzzing engine and keep the generated artifacts on disk between runs.
+test:fuzz --test_arg=-test.run=notests
+test:fuzz --test_arg=-test.fuzz=.
+test:fuzz --test_arg=-test.fuzztime=10s
+test:fuzz --test_arg=-test.fuzzcachedir=/tmp/{{ cookiecutter.app_name }}-bazel-fuzzcache
+test:fuzz --test_arg=-test.v

@@ -1,0 +1,2 @@
+# Use `bazel test --config=race` to enable the Go race detector.
+test:race --@rules_go//go/config:race

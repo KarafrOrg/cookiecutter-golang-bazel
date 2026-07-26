@@ -1,0 +1,43 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("//bazel:platforms.bzl", "PLATFORMS", "cross_binary_basename", "go_toolchain_platform")
+load("//bazel:version.bzl", "VERSION")
+
+go_library(
+    name = "{{ cookiecutter.app_name }}_lib",
+    srcs = ["main.go"],
+    importpath = "{{  cookiecutter.github_host }}/{{ cookiecutter.owner  }}/{{ cookiecutter.app_name }}/cmd/{{ cookiecutter.app_name }}",
+    visibility = ["//visibility:public"],
+)
+
+go_binary(
+    name = "{{ cookiecutter.app_name }}",
+    embed = [":{{ cookiecutter.app_name }}_lib"],
+    gc_linkopts = [
+        "-s",
+        "-w",
+        "-buildid=",
+    ],
+    pure = "on",
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "main.commit": "{STABLE_GIT_COMMIT}",
+        "main.gitTreeState": "{STABLE_GIT_TREE_STATE}",
+        "main.version": VERSION,
+    },
+)
+
+[
+    go_cross_binary(
+        name = cross_binary_basename("{{ cookiecutter.app_name }}", platform),
+        platform = go_toolchain_platform(platform),
+        target = ":{{ cookiecutter.app_name }}",
+        visibility = ["//visibility:public"],
+    )
+    for platform in PLATFORMS
+]
+
+filegroup(
+    name = "all_platforms",
+    srcs = [":" + cross_binary_basename("{{ cookiecutter.app_name }}", p) for p in PLATFORMS],
+    visibility = ["//visibility:public"],
+)

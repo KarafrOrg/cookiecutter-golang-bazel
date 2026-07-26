@@ -1,0 +1,9 @@
+{
+  "app_name": "hello-world",
+  "owner": "hello-world",
+  "github_host": "github.com",
+  "go_version": "1.26.3",
+  "use_git": "y",
+  "init_go_mod": "y",
+  "init_bzl_mod": "y"
+}

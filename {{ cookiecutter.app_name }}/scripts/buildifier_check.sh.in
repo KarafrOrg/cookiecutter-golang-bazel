@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+###### script header ######
+
+lib=$(realpath @@BASE_LIB@@) || exit 1
+stat "${lib}" >> /dev/null || exit 1
+
+# shellcheck source=../bazel/shell/lib.bash
+if ! source "${lib}"; then
+  echo "Error: could not find import"
+  exit 1
+fi
+
+buildifier=$(realpath @@BUILDIFIER@@)
+stat "${buildifier}" >> /dev/null
+
+cd "${BUILD_WORKSPACE_DIRECTORY}" || exit 1
+
+###### script body ######
+
+# Check only tracked Starlark files to avoid generated workspace artifacts.
+files=()
+while IFS= read -r file; do
+  [[ -n ${file} ]] && files+=("${file}")
+done < <(git ls-files \
+  '*.bzl' \
+  '*.sky' \
+  '*.bazel' \
+  'BUILD' \
+  '*.BUILD' \
+  'BUILD.*.oss' \
+  'WORKSPACE' \
+  'WORKSPACE.bzlmod' \
+  'WORKSPACE.oss' \
+  'WORKSPACE.*.oss')
+
+if [[ ${{ '{#' }}files[@]} -eq 0 ]]; then
+  echo "No tracked Starlark files found for buildifier check."
+  exit 0
+fi
+
+echo "Checking tracked Starlark files with buildifier:"
+for file in "${files[@]}"; do
+  printf "\t%s\n" "${file}"
+done
+
+"${buildifier}" -mode=check -v=true "${files[@]}"

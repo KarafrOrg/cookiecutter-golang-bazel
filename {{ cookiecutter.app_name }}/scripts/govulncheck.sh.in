@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+###### script header ######
+
+lib=$(realpath @@BASE_LIB@@) || exit 1
+stat "${lib}" >> /dev/null || exit 1
+
+# shellcheck source=../bazel/shell/lib.bash
+if ! source "${lib}"; then
+  echo "Error: could not find import"
+  exit 1
+fi
+
+go=$(realpath @@GO@@)
+stat "${go}" >> /dev/null
+govulncheck=$(realpath @@GOVULNCHECK@@)
+stat "${govulncheck}" >> /dev/null
+jq=$(realpath @@JQ@@)
+stat "${jq}" >> /dev/null
+
+cd "${BUILD_WORKSPACE_DIRECTORY}" || exit 1
+
+###### script body ######
+
+PATH=$(dirname "${go}"):${PATH}
+
+# Scan Bazel-built binaries so govulncheck does not rely on `go list ./...`
+# resolving source imports that may come from generated code.
+binary_candidates=(
+  "${BUILD_WORKSPACE_DIRECTORY}/bazel-bin/cmd/{{ cookiecutter.app_name }}/{{ cookiecutter.app_name }}_/{{ cookiecutter.app_name }}"
+  "${BUILD_WORKSPACE_DIRECTORY}/bazel-bin/cmd/{{ cookiecutter.app_name }}/{{ cookiecutter.app_name }}"
+)
+binaries=()
+
+for candidate in "${binary_candidates[@]}"; do
+  if [[ -x ${candidate} ]]; then
+    binaries+=("${candidate}")
+  fi
+done
+
+if [[ ${{ '{#' }}binaries[@]} -eq 0 ]]; then
+  bazel build //cmd/{{ cookiecutter.app_name }}:{{ cookiecutter.app_name }}
+  for candidate in "${binary_candidates[@]}"; do
+    if [[ -x ${candidate} ]]; then
+      binaries+=("${candidate}")
+    fi
+  done
+fi
+
+check_module() {
+  local binary="$1"
+
+  excluded_osvs=(
+    ""
+  )
+
+  if [[ ! -x ${binary} ]]; then
+    echo "Skipping missing binary: ${binary}" >&2
+    return 0
+  fi
+
+  # shellcheck disable=SC2016 # The $ sign in the single quoted string is correct.
+  CGO_ENABLED=0 ${govulncheck} -mode binary -format json "${binary}" |
+    "${jq}" --argjson excluded "$(printf '"%s"\n' "${excluded_osvs[@]}" | jq -s)" -sr '
+        (map(select(.osv) | {"key": .osv.id, "value": .osv.summary}) | from_entries) as $osvs |
+        map(select(.finding and (.finding.trace | length) > 0 and all($excluded[] != .finding.osv; .)) | .finding | select(.trace[-1].module != null and (.trace[-1].module | startswith("github.com/edgelesssys/")))) |
+        group_by(.osv) |
+        map( {"osv": .[0].osv, "summary": $osvs[.[0].osv], "traces": [.[] | [.trace[] | .module]]} ) |
+        if length > 0 then halt_error(1) else .[] end'
+}
+
+check() {
+  err=0
+
+  echo "Scanning Go vulnerability DB for known vulnerabilities in binaries:"
+  for binary in "${binaries[@]}"; do
+    printf "\t%s\n" "${binary}"
+    check_module "${binary}"
+    status=$?
+    if [[ ${status} -ne 0 ]]; then
+      err=${status}
+    fi
+  done
+
+  exit "${err}"
+
+}
+
+if [[ -n ${SILENT+x} ]]; then
+  check > /dev/null
+else
+  check
+fi

@@ -1,0 +1,50 @@
+module(
+    name = "{{ cookiecutter.app_name }}",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_go", version = "0.60.0")
+bazel_dep(name = "gazelle", version = "0.51.0")
+bazel_dep(name = "aspect_bazel_lib", version = "2.21.2")
+bazel_dep(name = "tar.bzl", version = "0.6.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
+bazel_dep(name = "rules_multirun", version = "0.13.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_nixpkgs_core", version = "0.13.0")
+
+host_platform = use_extension("@platforms//host:extension.bzl", "host_platform")
+use_repo(host_platform, "host_platform")
+
+bazel_lib = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
+bazel_lib.yq()
+use_repo(bazel_lib, "jq_toolchains")
+use_repo(bazel_lib, "yq_toolchains")
+
+shellcheck_ext = use_extension("//bazel/toolchains:shellcheck_repos.bzl", "shellcheck_repos")
+shellcheck_ext.download()
+use_repo(
+    shellcheck_ext,
+    "com_github_koalaman_shellcheck_darwin_amd64",
+    "com_github_koalaman_shellcheck_darwin_arm64",
+    "com_github_koalaman_shellcheck_linux_amd64",
+    "com_github_koalaman_shellcheck_linux_arm64",
+)
+
+go_sdk_ext = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk_ext.download(version = "{{ cookiecutter.go_version }}")
+go_sdk_ext.nogo(nogo = "//:{{ cookiecutter.app_name }}_nogo")
+
+go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
+go_deps.from_file(go_work = "//:go.work")
+use_repo(
+    go_deps,
+    "cc_mvdan_gofumpt",
+    "cc_mvdan_sh_v3",
+    "com_github_google_keep_sorted",
+    "com_github_katexochen_sh_v3",
+    "com_github_rhysd_actionlint",
+    "org_golang_x_tools",
+    "org_golang_x_vuln",
+)
