@@ -27,6 +27,10 @@ def init_git() -> None:
     Initialize git on the new project folder
     :return None
     """
+    remote_url = (
+        "git@{{ cookiecutter.github_host }}:"
+        "{{ cookiecutter.owner }}/{{ cookiecutter.app_name }}.git"
+    )
     commands = [
         ["git", "init"],
         ["git", "add", "."],
@@ -35,7 +39,7 @@ def init_git() -> None:
             "remote",
             "add",
             "origin",
-            "git@{{ cookiecutter.github_host }}:{{ cookiecutter.owner }}/{{ cookiecutter.app_name }}.git",
+            remote_url,
         ],
     ]
 
