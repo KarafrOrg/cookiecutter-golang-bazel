@@ -1,5 +1,6 @@
 {
   "app_name": "hello-world",
+  "app_description": "A simple hello world application",
   "owner": "hello-world",
   "github_host": "github.com",
   "go_version": "1.26.3",

@@ -4,6 +4,7 @@ import pytest
 
 BASE_CONTEXT = {
     "app_name": "my-app",
+    "app_description": "A simple hello world application",
     "owner": "testowner",
     "github_host": "github.com",
     "go_version": "1.22.0",
@@ -116,6 +117,7 @@ def test_gitignore_present_when_use_git_y(cookies):
         "bazel/shell/def.bzl",
         "bazel/version.bzl",
         "bazel/platforms.bzl",
+        "docs/README.md",
     ],
 )
 def test_required_file_present(cookies, filepath):
@@ -127,7 +129,7 @@ def test_repo_command_bash_array_syntax_preserved(cookies):
     """${#args[@]} must not be mangled by Jinja2 raw-block handling."""
     result = cookies.bake(extra_context=BASE_CONTEXT)
     content = (
-        result.project_path / "bazel" / "shell" / "repo_command.sh.in"
+            result.project_path / "bazel" / "shell" / "repo_command.sh.in"
     ).read_text()
     assert "${#args[@]}" in content
     assert "{% raw %}" not in content
